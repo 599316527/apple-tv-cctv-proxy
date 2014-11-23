@@ -1,0 +1,20 @@
+{
+  "name": "apple-tv-cctv-proxy",
+  "version": "1.0.0",
+  "description": "APPLE TV CCTV代理",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/599316527/apple-tv-cctv-proxy.git"
+  },
+  "author": "Kyle He",
+  "license": "MIT",
+  "dependencies": {},
+  "bugs": {
+    "url": "https://github.com/599316527/apple-tv-cctv-proxy/issues"
+  },
+  "homepage": "https://github.com/599316527/apple-tv-cctv-proxy"
+}

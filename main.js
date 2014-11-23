@@ -2,93 +2,43 @@
  * APPLE TV CCTV PROXY
  *
  * Kyle He (admin@hk1229.cn)
- * 2014-11-09 19:09:27
+ * 2014-11-23 20:26:37
  */
 
-var http = require('http');
-var qs = require('querystring');
-var url = require('url');
 
-const PORT = 8002;
-
-function sendRequest(channel, callback) {
-
-    var data = {
-        channel: 'pa://cctv_p2p_hd' + channel,
-        client: 'html5'
-    };
-
-    var content = qs.stringify(data);
-
-    var options = {
-        hostname: 'vdn.live.cntv.cn',
-        port: 80,
-        path: '/api2/liveHtml5.do?' + content,
-        method: 'GET'
-    };
-
-    var req = http.request(options, function(res) {
-        // console.log('STATUS: ' + res.statusCode);
-        res.setEncoding('utf8');
-        var buffer = '';
-        res.on('data', function(chunk) {
-            buffer += chunk;
-        });
-        res.on('end', function() {
-            var url = getUrl(buffer);
-            if (url.length < 100) {
-                callback(false, 'No url');
-            } else {
-                console.log('url get: ' + url);
-                callback(url);
-            }
-        });
-    });
-
-    req.on('error', function(e) {
-        console.log('problem with request: ' + e.message);
-        callback(false, e.message);
-    });
-
-    req.end();
-}
+var Server = require('./server').Server;
+var Emitter = require('./event-emitter').Event;
 
 
-function getUrl(input) {
-    var startString = ',"hls2":"';
-    var startIndex = input.indexOf(startString) + startString.length;
-    var endIndex = input.indexOf('"', startIndex);
-    input = input.substring(startIndex, endIndex);
-    return input;
-}
+var server = new Server();
 
-function serverHandler(request, response) {
-    var query = url.parse(request.url).pathname;
-    var ret = query.match(/\/([^\.]+)\.mp4/i);
-    if (!ret || !ret[1]) {
-        return ;
+
+Emitter.on('ERROR', function (code, msg) {
+    console.log(code, msg);
+    server.output(500, 'plain', msg);
+});
+
+Emitter.on('REQUEST', function (channel) {
+    console.log((new Date()).toString());
+    if (channel) {
+        console.log(channel);
+        var VideoUrl = require('./video-url');
+        VideoUrl.fetch(channel);
+    } else {
+        console.log('Index');
+        var ChannelList = require('./channel-list');
+        ChannelList.show();
     }
-    var channel = ret[1];
+});
 
-    sendRequest(channel, function(url, msg) {
-        if (url) {
-            response.writeHead(302, {
-                'Location': url
-            });
-            response.write(url);
-        } else {
-            response.writeHead(500, {
-                'Content-Type': 'text/plain'
-            });
-            response.write(msg);
-        }
-        response.end();
-    });
-};
+Emitter.on('URL_GOT', function (url) {
+    console.log(url);
+    server.redirect(url);
+});
 
-var server = http.createServer(serverHandler);
-server.listen(PORT);
-console.log('Server runing at port: ' + PORT);
+Emitter.on('HTML_OUTPUT', function (data) {
+    server.output(200, 'html', data);
+});
 
-
+server.start();
 
